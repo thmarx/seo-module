@@ -26,6 +26,9 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 import com.condation.cms.api.SiteProperties;
+import com.condation.cms.api.hooks.HookSystem;
+import com.condation.cms.modules.seo.api.robots.RobotsTxt;
+import java.net.URI;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,9 +36,16 @@ import lombok.RequiredArgsConstructor;
 public class RobotsTxtGenerator implements AutoCloseable {
     private final OutputStream output;
     private final SiteProperties siteProperties;
-
+    
+    private final HookSystem hookSystem;
+    
     public void create() throws Exception {
-        output.write("Sitemap: %s\r\n".formatted(createURL("sitemap.xml")).getBytes(StandardCharsets.UTF_8));
+        RobotsTxt robotstxt = new RobotsTxt();
+        robotstxt.addSitemap(URI.create(createURL("sitemap.xml")));
+        
+        robotstxt = hookSystem.doFilter("module/seo/robotstxt", robotstxt);
+        
+        output.write(robotstxt.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

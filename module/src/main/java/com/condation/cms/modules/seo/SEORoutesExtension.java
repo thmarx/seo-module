@@ -32,6 +32,7 @@ import org.eclipse.jetty.util.Callback;
 import com.condation.cms.api.annotations.Route;
 import com.condation.cms.api.extensions.http.routes.RoutesExtensionPoint;
 import com.condation.cms.api.feature.features.DBFeature;
+import com.condation.cms.api.feature.features.HookSystemFeature;
 import com.condation.cms.api.feature.features.SitePropertiesFeature;
 import com.condation.modules.api.annotation.Extension;
 
@@ -73,7 +74,8 @@ public class SEORoutesExtension extends RoutesExtensionPoint {
 
 		try (var robotstxt = new RobotsTxtGenerator(
 				Response.asBufferedOutputStream(request, response),
-				context.get(SitePropertiesFeature.class).siteProperties())) {
+				getContext().get(SitePropertiesFeature.class).siteProperties(),
+                getRequestContext().get(HookSystemFeature.class).hookSystem())) {
 			response.getHeaders().add(HttpHeader.CONTENT_TYPE, "text/plain");
 			robotstxt.create();
 		} catch (Exception e) {
