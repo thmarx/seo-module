@@ -41,7 +41,7 @@ public class RobotsTxtGenerator implements AutoCloseable {
     
     public void create() throws Exception {
         RobotsTxt robotstxt = new RobotsTxt();
-        robotstxt.addSitemap(URI.create(createURL("sitemap.xml")));
+        robotstxt.addSitemap(URI.create(SeoUrlHelper.createUrl(siteProperties, "sitemap.xml")));
         
         robotstxt = hookSystem.doFilter("module/seo/robotstxt", robotstxt);
         
@@ -52,16 +52,4 @@ public class RobotsTxtGenerator implements AutoCloseable {
     public void close() throws Exception {
         output.close();
     }
-
-    private String createURL (final String uri) {
-		String baseUrl = (String) siteProperties.get("baseurl");
-		if (baseUrl == null) {
-			baseUrl = "";
-		}
-		if (baseUrl.endsWith("/")) {
-			baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf("/"));
-		}
-		
-		return "%s/%s".formatted(baseUrl, uri);
-	}
 }
