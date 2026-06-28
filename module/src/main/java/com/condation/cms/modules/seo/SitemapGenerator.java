@@ -48,7 +48,7 @@ public class SitemapGenerator implements AutoCloseable {
 	
 	public void addNode (final ContentNode node) throws IOException {
 		output.write("<url>".getBytes(StandardCharsets.UTF_8));
-		output.write("<loc>%s</loc>".formatted(createURL(node)
+		output.write("<loc>%s</loc>".formatted(escapeXml(createURL(node))
 		).getBytes(StandardCharsets.UTF_8));
 		output.write("<lastmod>%s</lastmod>"
 				.formatted(DateTimeFormatter.ISO_LOCAL_DATE.format(node.lastmodified()))
@@ -82,6 +82,15 @@ public class SitemapGenerator implements AutoCloseable {
 			uri = uri.substring(1);
 		}
 		return uri;
+	}
+
+	private String escapeXml (final String value) {
+		return value
+				.replace("&", "&amp;")
+				.replace("<", "&lt;")
+				.replace(">", "&gt;")
+				.replace("\"", "&quot;")
+				.replace("'", "&apos;");
 	}
 	
 	@Override
