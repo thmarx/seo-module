@@ -57,7 +57,9 @@ public class SEORoutesExtension extends RoutesExtensionPoint {
                 sitemap.start();
                 context.get(DBFeature.class).db().getContent().query((node, length) -> node).get().forEach(node -> {
                     try {
-                        sitemap.addNode(node);
+                        if (node.getMetaValue("seo.index", true)) {
+                            sitemap.addNode(node);
+                        }
                     } catch (IOException ex) {
                         log.error(null, ex);
                     }
