@@ -21,7 +21,7 @@ package com.condation.cms.modules.seo;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
+import com.condation.cms.api.SiteProperties;
 import java.io.IOException;
 
 import org.eclipse.jetty.http.HttpHeader;
@@ -46,44 +46,54 @@ import lombok.extern.slf4j.Slf4j;
 @Extension(RoutesExtensionPoint.class)
 public class SEORoutesExtension extends RoutesExtensionPoint {
 
-	@Route("/sitemap.xml")
-	public boolean sitemap(Request request, Response response, Callback callback) throws Exception {
+    @Route("/sitemap.xml")
+    public boolean sitemap(Request request, Response response, Callback callback) throws Exception {
+        final SiteProperties siteProperties = context.get(SitePropertiesFeature.class).siteProperties();
 
-		try (var sitemap = new SitemapGenerator(
-				Response.asBufferedOutputStream(request, response),
-				context.get(SitePropertiesFeature.class).siteProperties())) {
-			response.getHeaders().add(HttpHeader.CONTENT_TYPE, "application/xml");
-			sitemap.start();
-			context.get(DBFeature.class).db().getContent().query((node, length) -> node).get().forEach(node -> {
-				try {
-					sitemap.addNode(node);
-				} catch (IOException ex) {
-					log.error(null, ex);
-				}
-			});
-		} catch (Exception e) {
-			log.error(null, e);
-		}
-		callback.succeeded();
+        if (siteProperties.getOrDefault("seo.sitemap", true)) {
+            try (var sitemap = new SitemapGenerator(
+                    Response.asBufferedOutputStream(request, response), siteProperties)) {
+                response.getHeaders().add(HttpHeader.CONTENT_TYPE, "application/xml");
+                sitemap.start();
+                context.get(DBFeature.class).db().getContent().query((node, length) -> node).get().forEach(node -> {
+                    try {
+                        sitemap.addNode(node);
+                    } catch (IOException ex) {
+                        log.error(null, ex);
+                    }
+                });
+            } catch (Exception e) {
+                log.error(null, e);
+            }
+            callback.succeeded();
 
-		return true;
-	}
+            return true;
+        }
 
-	@Route("/robots.txt")
-	public boolean robots_txt(Request request, Response response, Callback callback) throws Exception {
+        return false;
 
-		try (var robotstxt = new RobotsTxtGenerator(
-				Response.asBufferedOutputStream(request, response),
-				getContext().get(SitePropertiesFeature.class).siteProperties(),
+    }
+
+    @Route("/robots.txt")
+    public boolean robots_txt(Request request, Response response, Callback callback) throws Exception {
+
+        final SiteProperties siteProperties = context.get(SitePropertiesFeature.class).siteProperties();
+        
+        if (siteProperties.getOrDefault("seo.robotstxt", true)) {
+            try (var robotstxt = new RobotsTxtGenerator(
+                Response.asBufferedOutputStream(request, response),
+                siteProperties,
                 getRequestContext().get(HookSystemFeature.class).hookSystem())) {
-			response.getHeaders().add(HttpHeader.CONTENT_TYPE, "text/plain");
-			robotstxt.create();
-		} catch (Exception e) {
-			log.error(null, e);
-		}
-		callback.succeeded();
+            response.getHeaders().add(HttpHeader.CONTENT_TYPE, "text/plain");
+            robotstxt.create();
+        } catch (Exception e) {
+            log.error(null, e);
+        }
+        callback.succeeded();
 
-		return true;
-	}
+        return true;
+        }
+        return false;
+    }
 
 }
