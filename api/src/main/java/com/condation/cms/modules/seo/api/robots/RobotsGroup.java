@@ -48,6 +48,14 @@ public final class RobotsGroup {
         return disallows;
     }
 
+    public void allow (String url) {
+        this.allows.add(url);
+    }
+
+    public void disallow (String url) {
+        this.disallows.add(url);
+    }
+
     public boolean isEmpty() {
         return userAgent == null || userAgent.isBlank();
     }

@@ -48,8 +48,8 @@ public final class RobotsTxt {
                 });
     }
 
-    public void addSitemap(URI sitemap) {
-        sitemaps.add(sitemap.toString());
+    public void addSitemap(String sitemap) {
+        sitemaps.add(sitemap);
     }
     
     private List<RobotsGroup> groups() {
