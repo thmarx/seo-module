@@ -21,12 +21,12 @@ package com.condation.cms.modules.seo;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import com.condation.cms.api.SiteProperties;
 import com.condation.cms.api.annotations.Action;
 import com.condation.cms.api.db.ContentNode;
 import com.condation.cms.api.extensions.HookSystemRegisterExtensionPoint;
 import com.condation.cms.api.feature.features.CurrentNodeFeature;
+import com.condation.cms.api.feature.features.RequestFeature;
 import com.condation.cms.api.feature.features.SitePropertiesFeature;
 import com.condation.modules.api.annotation.Extension;
 
@@ -38,7 +38,7 @@ import com.condation.modules.api.annotation.Extension;
 public class SeoHooks extends HookSystemRegisterExtensionPoint {
 
 	@Action("system/layout/html/header")
-	public String meta () {
+	public String meta() {
 		if (!getRequestContext().has(CurrentNodeFeature.class)) {
 			return "";
 		}
@@ -53,16 +53,47 @@ public class SeoHooks extends HookSystemRegisterExtensionPoint {
 
 		appendOpenGraph(sb, node, siteProperties);
 
+		appendTwitterCard(sb, node, siteProperties);
+
+		appendCanonical(sb, node, siteProperties);
+
 		return sb.toString();
 	}
 
-	private void appendOpenGraph (StringBuilder sb, ContentNode node, SiteProperties siteProperties) {
-		String title = node.getMetaValue("seo.og.title", node.getMetaValue("title", ""));
-		String description = node.getMetaValue("seo.og.description", node.getMetaValue("excerpt", ""));
-		String image = node.getMetaValue("seo.og.image", "");
-		String type = node.getMetaValue("seo.og.type", "website");
-		String url = node.getMetaValue("seo.og.url", SeoUrlHelper.createUrl(siteProperties, node));
+	private void appendCanonical(StringBuilder sb, ContentNode node, SiteProperties siteProperties) {
+		if (!siteProperties.getOrDefault("seo.canonical", true)) {
+			return;
+		}
+		var canonicalUrl = SeoUrlHelper.createCanonical(siteProperties, node);
 
+		var request = getRequestContext().get(RequestFeature.class);
+		if (request.hasQueryParameter("page")) {
+			var page = request.getQueryParameterAsInt("page", 1);
+			if (page > 1) {
+				canonicalUrl += "?page=" + page;
+			}
+		}
+
+		sb.append("<link rel=\"canonical\" href=\"").append(canonicalUrl).append("\" />");
+	}
+
+	private void appendOpenGraph(StringBuilder sb, ContentNode node, SiteProperties siteProperties) {
+		if (!siteProperties.getOrDefault("seo.opengraph", true)) {
+			return;
+		}
+		String sharedTitle = node.getMetaValue("seo.title", node.getMetaValue("title", ""));
+		String sharedDescription = node.getMetaValue("seo.description", node.getMetaValue("excerpt", ""));
+		String sharedImage = node.getMetaValue("seo.image", "");
+		String sharedUrl = node.getMetaValue("seo.url", SeoUrlHelper.createUrl(siteProperties, node));
+
+		String type = node.getMetaValue("seo.og.type", siteProperties.getOrDefault("seo.og.type", "website"));
+		String url = node.getMetaValue("seo.og.url", sharedUrl);
+		String title = node.getMetaValue("seo.og.title", sharedTitle);
+		String description = node.getMetaValue("seo.og.description", sharedDescription);
+		String image = node.getMetaValue("seo.og.image", sharedImage);
+
+		sb.append("<meta property=\"og:type\" content=\"").append(escapeHtml(type)).append("\" />\n");
+		sb.append("<meta property=\"og:url\" content=\"").append(escapeHtml(url)).append("\" />\n");
 		if (!title.isBlank()) {
 			sb.append("<meta property=\"og:title\" content=\"").append(escapeHtml(title)).append("\" />\n");
 		}
@@ -72,11 +103,45 @@ public class SeoHooks extends HookSystemRegisterExtensionPoint {
 		if (!image.isBlank()) {
 			sb.append("<meta property=\"og:image\" content=\"").append(escapeHtml(image)).append("\" />\n");
 		}
-		sb.append("<meta property=\"og:type\" content=\"").append(escapeHtml(type)).append("\" />\n");
-		sb.append("<meta property=\"og:url\" content=\"").append(escapeHtml(url)).append("\" />\n");
 	}
 
-	private String escapeHtml (String value) {
+	private void appendTwitterCard(StringBuilder sb, ContentNode node, SiteProperties siteProperties) {
+		if (!siteProperties.getOrDefault("seo.twitter", true)) {
+			return;
+		}
+		String sharedTitle = node.getMetaValue("seo.title", node.getMetaValue("title", ""));
+		String sharedDescription = node.getMetaValue("seo.description", node.getMetaValue("excerpt", ""));
+		String sharedImage = node.getMetaValue("seo.image", "");
+		String sharedUrl = node.getMetaValue("seo.url", SeoUrlHelper.createUrl(siteProperties, node));
+
+		String card = node.getMetaValue("seo.twitter.card", siteProperties.getOrDefault("seo.twitter.card", "summary"));
+		String url = node.getMetaValue("seo.twitter.url", sharedUrl);
+		String title = node.getMetaValue("seo.twitter.title", sharedTitle);
+		String description = node.getMetaValue("seo.twitter.description", sharedDescription);
+		String image = node.getMetaValue("seo.twitter.image", sharedImage);
+		String site = node.getMetaValue("seo.twitter.site", siteProperties.getOrDefault("seo.twitter.site", ""));
+		String creator = node.getMetaValue("seo.twitter.creator", siteProperties.getOrDefault("seo.twitter.creator", ""));
+
+		sb.append("<meta name=\"twitter:card\" content=\"").append(escapeHtml(card)).append("\" />\n");
+		sb.append("<meta name=\"twitter:url\" content=\"").append(escapeHtml(url)).append("\" />\n");
+		if (!title.isBlank()) {
+			sb.append("<meta name=\"twitter:title\" content=\"").append(escapeHtml(title)).append("\" />\n");
+		}
+		if (!description.isBlank()) {
+			sb.append("<meta name=\"twitter:description\" content=\"").append(escapeHtml(description)).append("\" />\n");
+		}
+		if (!image.isBlank()) {
+			sb.append("<meta name=\"twitter:image\" content=\"").append(escapeHtml(image)).append("\" />\n");
+		}
+		if (!site.isBlank()) {
+			sb.append("<meta name=\"twitter:site\" content=\"").append(escapeHtml(site)).append("\" />\n");
+		}
+		if (!creator.isBlank()) {
+			sb.append("<meta name=\"twitter:creator\" content=\"").append(escapeHtml(creator)).append("\" />\n");
+		}
+	}
+
+	private String escapeHtml(String value) {
 		return value
 				.replace("&", "&amp;")
 				.replace("\"", "&quot;")

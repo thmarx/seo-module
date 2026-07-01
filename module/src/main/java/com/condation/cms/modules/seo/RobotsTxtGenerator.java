@@ -28,7 +28,6 @@ import java.nio.charset.StandardCharsets;
 import com.condation.cms.api.SiteProperties;
 import com.condation.cms.api.hooks.HookSystem;
 import com.condation.cms.modules.seo.api.robots.RobotsTxt;
-import java.net.URI;
 
 import lombok.RequiredArgsConstructor;
 

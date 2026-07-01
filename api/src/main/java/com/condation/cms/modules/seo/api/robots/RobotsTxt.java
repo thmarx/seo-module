@@ -23,7 +23,6 @@ package com.condation.cms.modules.seo.api.robots;
  * #L%
  */
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,23 +50,12 @@ public final class RobotsTxt {
     public void addSitemap(String sitemap) {
         sitemaps.add(sitemap);
     }
-    
-    private List<RobotsGroup> groups() {
-        return groups;
-    }
-
-    private List<String> sitemaps() {
-        return sitemaps;
-    }
-
-    private List<String> comments() {
-        return comments;
-    }
 
     @Override
     public String toString() {
         StringBuilder output = new StringBuilder();
 
+        boolean wroteComment = false;
         for (String comment : comments) {
             if (comment == null || comment.isBlank()) {
                 continue;
@@ -78,38 +66,36 @@ public final class RobotsTxt {
                     : "# " + comment;
 
             output.append(normalized).append('\n');
+            wroteComment = true;
         }
 
-        if (!comments.isEmpty() && (!groups.isEmpty() || !sitemaps.isEmpty())) {
-            output.append('\n');
-        }
-
-        for (int i = 0; i < groups.size(); i++) {
-            RobotsGroup group = groups.get(i);
-
-            if (group == null || group.isEmpty()) {
-                continue;
-            }
-
-            output.append(group);
-
-            if (i < groups.size() - 1) {
-                output.append('\n');
+        List<String> groupStrings = new ArrayList<>();
+        for (RobotsGroup group : groups) {
+            if (group != null && !group.isEmpty()) {
+                groupStrings.add(group.toString());
             }
         }
 
-        if (!groups.isEmpty() && !sitemaps.isEmpty()) {
+        boolean wroteGroups = !groupStrings.isEmpty();
+
+        if (wroteComment && (wroteGroups || !sitemaps.isEmpty())) {
             output.append('\n');
         }
 
+        output.append(String.join("\n", groupStrings));
+
+        boolean wroteSitemap = false;
         for (String sitemap : sitemaps) {
             if (sitemap == null || sitemap.isBlank()) {
                 continue;
             }
-
+            if (!wroteSitemap && wroteGroups) {
+                output.append('\n');
+            }
             output.append("Sitemap: ")
                     .append(sitemap.trim())
                     .append('\n');
+            wroteSitemap = true;
         }
 
         return output.toString();

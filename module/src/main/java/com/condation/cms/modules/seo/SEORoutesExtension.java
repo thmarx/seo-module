@@ -83,17 +83,17 @@ public class SEORoutesExtension extends RoutesExtensionPoint {
         
         if (siteProperties.getOrDefault("seo.robotstxt", true)) {
             try (var robotstxt = new RobotsTxtGenerator(
-                Response.asBufferedOutputStream(request, response),
-                siteProperties,
-                getRequestContext().get(HookSystemFeature.class).hookSystem())) {
-            response.getHeaders().add(HttpHeader.CONTENT_TYPE, "text/plain");
-            robotstxt.create();
-        } catch (Exception e) {
-            log.error(null, e);
-        }
-        callback.succeeded();
+                    Response.asBufferedOutputStream(request, response),
+                    siteProperties,
+                    getRequestContext().get(HookSystemFeature.class).hookSystem())) {
+                response.getHeaders().add(HttpHeader.CONTENT_TYPE, "text/plain");
+                robotstxt.create();
+            } catch (Exception e) {
+                log.error(null, e);
+            }
+            callback.succeeded();
 
-        return true;
+            return true;
         }
         return false;
     }

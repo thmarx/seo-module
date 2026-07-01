@@ -24,49 +24,25 @@ package com.condation.cms.modules.seo;
 
 import com.condation.cms.api.SiteProperties;
 import com.condation.cms.api.db.ContentNode;
+import com.condation.cms.api.utils.HTTPUtil;
+import com.condation.cms.api.utils.PathUtil;
 
 final class SeoUrlHelper {
 
 	private SeoUrlHelper () {
 	}
+	
+	public static String createCanonical (final SiteProperties siteProperties, final ContentNode node) {
+		var canonicalUrl = PathUtil.toURL(node.uri());
+		return siteProperties.baseUrl() + HTTPUtil.prependContext(canonicalUrl, siteProperties);
+	}
 
 	static String createUrl (final SiteProperties siteProperties, final ContentNode node) {
-		return createUrl(siteProperties, patchUri(node.uri()));
+		return createUrl(siteProperties, node.uri());
 	}
 
 	static String createUrl (final SiteProperties siteProperties, final String uri) {
-		return "%s/%s".formatted(baseUrl(siteProperties), normalizeUri(uri));
-	}
-
-	private static String baseUrl (final SiteProperties siteProperties) {
-		String baseUrl = (String) siteProperties.get("baseurl");
-		if (baseUrl == null) {
-			baseUrl = "";
-		}
-		if (baseUrl.endsWith("/")) {
-			baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf("/"));
-		}
-
-		return baseUrl;
-	}
-
-	private static String normalizeUri (String uri) {
-		if (uri.startsWith("/")) {
-			uri = uri.substring(1);
-		}
-		return uri;
-	}
-
-	private static String patchUri (String uri) {
-		if (uri.endsWith("index.md")) {
-			uri = uri.replace("index.md", "");
-		}
-		if (uri.endsWith("/")) {
-			uri = uri.substring(0, uri.lastIndexOf("/"));
-		}
-		if (uri.endsWith(".md")) {
-			uri = uri.substring(0, uri.lastIndexOf("."));
-		}
-		return normalizeUri(uri);
+		var path = PathUtil.toURL(uri);
+		return siteProperties.baseUrl() + HTTPUtil.prependContext(path, siteProperties);
 	}
 }
